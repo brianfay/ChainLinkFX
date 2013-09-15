@@ -1,16 +1,20 @@
 package ChainLinkFX;
 
+import java.util.ArrayList;
+
 public class ChainLinkFX{
 	
 	GUI theGUI;
 	AudioModel audioModel = new AudioModel();
+	ArrayList streams = new ArrayList<StreamModel>();
+	ArrayList devices = new ArrayList<Device>();
 	
 	public ChainLinkFX(){
 		theGUI = new GUI();
 	}
 	
 	public static void main(String[] args){
-		System.loadLibrary("ChainLinkFX");
+		
 		//may want to add -nogui support eventually
 		if(args.length > 0){
 				

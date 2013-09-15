@@ -1,6 +1,10 @@
 #!/bin/sh
 
-cd src
-javac -d ../bin *.java
-cd ../bin
-java ChainLinkFX.ChainLinkFX
+make clean
+make java
+cd bin
+javah -d ../include/ ChainLinkFX.JNIBridge
+cd ../
+make C
+cd bin
+java -Djava.library.path=../lib ChainLinkFX.ChainLinkFX

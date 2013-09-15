@@ -20,7 +20,14 @@ public class FrameView extends JFrame{
 	}
 	
 	public void init(){
-		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
+		this.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+		this.addWindowListener(new WindowAdapter(){
+			@Override
+			public void windowClosing(WindowEvent we){
+				JNIBridge.terminatePA();
+				System.exit(0);
+			}
+			});
 		JPanel containerPanel = new JPanel();
 		containerPanel.setLayout(new BoxLayout(containerPanel,BoxLayout.PAGE_AXIS));
 		streamPane = new JTabbedPane();
