@@ -7,14 +7,14 @@ import javax.swing.JButton;
 import javax.swing.BoxLayout;
 import java.awt.event.*;
 
-public class FrameView extends JFrame{
+public class MainFrame extends JFrame{
 	
 	JTabbedPane streamPane;
 	AddButton addButton;
 	RemoveButton removeButton;
 	
 	
-	public FrameView(){
+	public MainFrame(){
 		super("ChainLinkFX");
 		init();	
 	}
@@ -55,7 +55,7 @@ public class FrameView extends JFrame{
 			addActionListener(this);
 		}
 		public void actionPerformed(ActionEvent e){
-			streamPane.addTab("Stream" + (streamPane.getTabCount() + 1),new JButton("cool"));
+			streamPane.addTab("Stream" + (streamPane.getTabCount() + 1),new JButton("button"));
 			theFrame.pack();
 		}
 	}

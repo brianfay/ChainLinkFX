@@ -1,10 +1,16 @@
 package ChainLinkFX;
 
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 public class GUI{
-	FrameView theFrame;
+	MainFrame theFrame;
 	public GUI(){
+		try{
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		}catch(Exception e){
+			e.printStackTrace();
+		}
 		SwingUtilities.invokeLater(new Runnable(){
 			public void run(){
 				init();
@@ -12,6 +18,6 @@ public class GUI{
 		});
 	}
 	private void init(){
-		theFrame = new FrameView();
+		theFrame = new MainFrame();
 	}
 }
