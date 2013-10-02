@@ -1,7 +1,12 @@
 package ChainLinkFX;
 
 public class Device{
-    String name, hostApiName;
+	private static Device instance = null;
+	
+	protected Device(){
+		
+	}
+    String name;
     int deviceIndex;
     int maxInputChannels;
     int maxOutputChannels;
@@ -16,9 +21,8 @@ public class Device{
     double defaultSampleRate;
     */
     
-    public Device(String _name, String _hostApiName, int _deviceIndex, int _maxInputChannels, int _maxOutputChannels){
+    public Device(String _name, int _deviceIndex, int _maxInputChannels, int _maxOutputChannels){
 		name = _name;
-		hostApiName = _hostApiName;
 		deviceIndex = _deviceIndex;
 		maxInputChannels = _maxInputChannels;
 		maxOutputChannels = _maxOutputChannels;

@@ -23,19 +23,15 @@ JNIEXPORT jobject JNICALL Java_ChainLinkFX_JNIBridge_constructDevice(JNIEnv *env
 	jobject callingObject, jint deviceIndex)
 {
 	jclass customTypeClass = (*env)->FindClass(env,"ChainLinkFX/Device");
-	jmethodID midConstructor = (*env)->GetMethodID(env,customTypeClass, "<init>", "(Ljava/lang/String;Ljava/lang/String;III)V");
+	jmethodID midConstructor = (*env)->GetMethodID(env,customTypeClass, "<init>", "(Ljava/lang/String;III)V");
 	PaDeviceInfo* deviceInfo = Pa_GetDeviceInfo((PaDeviceIndex)deviceIndex);
 	jint maxInputChannels = deviceInfo->maxInputChannels;
 	jint maxOutputChannels = deviceInfo->maxOutputChannels;;
 	char* deviceText = (char*)malloc(strlen(deviceInfo->name));
-	char* hostApiText = (char*)malloc(strlen("This is my string."));
 	
 	strcpy(deviceText, deviceInfo->name);
-	strcpy(hostApiText, "This is my string.");
 	jstring deviceString = (*env)->NewStringUTF(env, deviceText);
-	jstring hostApiString = (*env)->NewStringUTF(env, hostApiText);
-	jobject device = (*env)->NewObject(env, customTypeClass, midConstructor,deviceString,hostApiString,deviceIndex,maxInputChannels,maxOutputChannels);
-	free(hostApiText);
+	jobject device = (*env)->NewObject(env, customTypeClass, midConstructor,deviceString,deviceIndex,maxInputChannels,maxOutputChannels);
 	free(deviceText);
 	return device;
 }
@@ -45,4 +41,27 @@ JNIEXPORT jint JNICALL Java_ChainLinkFX_JNIBridge_getDeviceCount(JNIEnv *env,
 {
 	jint i = (jint)Pa_GetDeviceCount();
 	return i;
+}
+
+JNIEXPORT jint JNICALL Java_ChainLinkFX_JNIBridge_addChain(JNIEnv *env,
+	jobject callingObject, jint inputDeviceIndex, jint outputDeviceIndex)
+{
+	int err = newChain((int)inputDeviceIndex, (int)outputDeviceIndex);
+	if(err != 0){
+		return -1;
+	}
+	return 0;
+}
+
+JNIEXPORT jint JNICALL Java_ChainLinkFX_JNIBridge_removeChain(JNIEnv *env,
+	jobject callingObject, jint chainIndex)
+{
+	int err = removeChain((int)chainIndex);
+	return 0;
+}
+
+JNIEXPORT jint JNICALL Java_ChainLinkFX_JNIBridge_setParameter(JNIEnv *env,
+	jobject callingObject, jint chainIndex,jint effectIndex,jint parameterIndex,jfloat value)
+{
+	return 0;
 }

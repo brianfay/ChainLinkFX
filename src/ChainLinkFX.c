@@ -7,6 +7,7 @@
 typedef float SAMPLE;
 
 int newChain(PaDeviceIndex inputDeviceIndex, PaDeviceIndex outputDeviceIndex);
+int removeChain(int chainIndex);
 int audioCallback(const void *inputBuffer, void *outputBuffer,
 				unsigned long framesPerBuffer,
 				const PaStreamCallbackTimeInfo* timeInfo,
@@ -18,54 +19,55 @@ void emptyEffect(SAMPLE **in, SAMPLE **out);
 Chain* rootChain = NULL;
 int newChain(PaDeviceIndex inputDeviceIndex, PaDeviceIndex outputDeviceIndex)
 {
-	Chain* chain;
 	PaError err;
+	//malloc memory for new node
+	Chain* newChain = malloc(sizeof(Chain));
+	//set new final node's next pointer to NULL
+	newChain->nextChain = NULL;
 	if(rootChain == NULL){
-		chain = rootChain;
+		rootChain = newChain;
 	}
 	else{
-		chain = rootChain->nextChain;
-		while(chain->nextChain != NULL){
-			chain = chain->nextChain;
+		Chain* iterator = rootChain;
+		while(iterator->nextChain != NULL){
+			iterator = iterator->nextChain;
 		}
-		//set to first null chain in the list
-		chain = chain->nextChain;
+		//set final node's next node pointer to new node
+		iterator->nextChain = newChain;
 	}
-	chain = malloc(sizeof(Chain));
-	chain->inputParameters.device = inputDeviceIndex;
-	if(chain->inputParameters.device == paNoDevice){
+	newChain->inputParameters.device = inputDeviceIndex;
+	if(newChain->inputParameters.device == paNoDevice){
 		fprintf(stderr,"Error: Input device is invalid.\n Maybe the device has been unplugged?");
 		goto error;
 	}
 	PaDeviceInfo* inputDeviceInfo = Pa_GetDeviceInfo(inputDeviceIndex);
 	PaDeviceInfo* outputDeviceInfo = Pa_GetDeviceInfo(outputDeviceIndex);
-	chain->inputParameters.channelCount = inputDeviceInfo->maxInputChannels;
-	chain->inputParameters.sampleFormat = PA_SAMPLE_TYPE;
-	chain->inputParameters.suggestedLatency = inputDeviceInfo->defaultLowInputLatency;
-	chain->inputParameters.hostApiSpecificStreamInfo = NULL;
-	
-	chain->outputParameters.device = outputDeviceIndex;
-	if(chain->outputParameters.device == paNoDevice){
+	newChain->inputParameters.channelCount = inputDeviceInfo->maxInputChannels;
+	newChain->inputParameters.sampleFormat = PA_SAMPLE_TYPE;
+	newChain->inputParameters.suggestedLatency = inputDeviceInfo->defaultLowInputLatency;
+	newChain->inputParameters.hostApiSpecificStreamInfo = NULL;
+	newChain->outputParameters.device = outputDeviceIndex;
+	if(newChain->outputParameters.device == paNoDevice){
 		fprintf(stderr,"Error: Output device is invalid.\n Maybe the device has been unplugged?");
 		goto error;
 	}
-	chain->outputParameters.channelCount = outputDeviceInfo->maxOutputChannels;
-	chain->outputParameters.sampleFormat = PA_SAMPLE_TYPE;
-	chain->outputParameters.suggestedLatency = outputDeviceInfo->defaultLowOutputLatency;
-	chain->outputParameters.hostApiSpecificStreamInfo = NULL;
+	newChain->outputParameters.channelCount = outputDeviceInfo->maxOutputChannels;
+	newChain->outputParameters.sampleFormat = PA_SAMPLE_TYPE;
+	newChain->outputParameters.suggestedLatency = outputDeviceInfo->defaultLowOutputLatency;
+	newChain->outputParameters.hostApiSpecificStreamInfo = NULL;
 	//registering an effect:
-	chain->chainLink.effectFunction = &emptyEffect;
+	newChain->chainLink.effectFunction = &emptyEffect;
 	err = Pa_OpenStream(
-			&(chain->stream),
-			&(chain->inputParameters),
-			&(chain->outputParameters),
+			&(newChain->stream),
+			&(newChain->inputParameters),
+			&(newChain->outputParameters),
 			inputDeviceInfo->defaultSampleRate,	
 			paFramesPerBufferUnspecified,
 			paClipOff,
 			audioCallback,
-			&(chain->chainLink));
+			&(newChain->chainLink));
 	if(err != paNoError) goto error;
-	err = Pa_StartStream(chain->stream);
+	err = Pa_StartStream(newChain->stream);
 	if( err != paNoError ) goto error;
 	return 0;
 	error:
@@ -114,7 +116,42 @@ void emptyEffect(SAMPLE **in, SAMPLE **out)
 
 int removeChain(int chainIndex)
 {
-	//should have error-checking
-	
+	if(rootChain == NULL){
+		//this totally shouldn't happen but I'll keep it here for debug purposes
+		printf("rootChain is null!?\n");
+		return -1;
+	}
+	Chain* chainToRemove = rootChain;
+	int i;
+	//if root chain: 
+	if(chainIndex == 0){
+		//if next chain exists:
+		if(chainToRemove->nextChain != NULL){
+		//set root chain to next chain
+			rootChain = chainToRemove->nextChain;
+		}
+		else{
+			rootChain = NULL;
+		}
+	}
+	else{
+		Chain* preChainToRemove;
+		for(i = 0; i < chainIndex; i++){
+			preChainToRemove = chainToRemove;
+			chainToRemove = chainToRemove->nextChain;
+		}
+		preChainToRemove->nextChain = chainToRemove->nextChain;
+	}
+	if(chainToRemove == NULL){
+		//this totally shouldn't happen but I'll keep it here for debug purposes
+		printf("chainToRemove was null!\n");
+		return -1;
+	}
+	Pa_StopStream(chainToRemove->stream);
+	//this returns 1 when stream is still active
+	while(Pa_IsStreamStopped(chainToRemove->stream) != 1){
+		//do nothing; block until stream is finished
+	}
+	free(chainToRemove);
 	return 0;
 }
