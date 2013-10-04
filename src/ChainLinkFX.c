@@ -4,10 +4,10 @@
 #include <stdlib.h>
 #define PA_SAMPLE_TYPE paFloat32
 
-typedef float SAMPLE;
-
 int newChain(PaDeviceIndex inputDeviceIndex, PaDeviceIndex outputDeviceIndex);
 int removeChain(int chainIndex);
+int newChainLink(int chainIndex);
+int removeChainLink(int chainIndex, int chainLinkIndex);
 int audioCallback(const void *inputBuffer, void *outputBuffer,
 				unsigned long framesPerBuffer,
 				const PaStreamCallbackTimeInfo* timeInfo,
@@ -55,7 +55,9 @@ int newChain(PaDeviceIndex inputDeviceIndex, PaDeviceIndex outputDeviceIndex)
 	newChain->outputParameters.sampleFormat = PA_SAMPLE_TYPE;
 	newChain->outputParameters.suggestedLatency = outputDeviceInfo->defaultLowOutputLatency;
 	newChain->outputParameters.hostApiSpecificStreamInfo = NULL;
-	//registering an effect:
+	//registering first (empty) ChainLink:
+	newChain->chainLink.numInputChannels = newChain->inputParameters.channelCount;
+	newChain->chainLink.numOutputChannels = newChain->outputParameters.channelCount;
 	newChain->chainLink.effectFunction = &emptyEffect;
 	err = Pa_OpenStream(
 			&(newChain->stream),
@@ -89,21 +91,27 @@ int audioCallback( const void *inputBuffer, void *outputBuffer,
 	(void) timeInfo;
 	(void) statusFlags;
 	ChainLink* functionChain = (ChainLink*) userData;
+	int currentChannel;
 	if(inputBuffer == NULL)
 	{
 		for(i=0; i<framesPerBuffer; i++)
 		{
-			//should alter to get channels right
+			for(currentChannel = 0; currentChannel < functionChain->numOutputChannels; currentChannel++)
+			{
 			*out++ = 0;
-			*out++ = 0;
+			}
 		}
 	}
 	else
 	{
 		for(i = 0; i<framesPerBuffer; i++)
 		{
+			for(currentChannel = 0; currentChannel < functionChain->numOutputChannels; currentChannel++)
+			{
 			(*functionChain).effectFunction(&in,&out);
-			(*functionChain).effectFunction(&in,&out);
+			*out++;
+			*in++;
+			}
 		}
 	}
 	return paContinue;
@@ -111,7 +119,7 @@ int audioCallback( const void *inputBuffer, void *outputBuffer,
 
 void emptyEffect(SAMPLE **in, SAMPLE **out)
 {
-	*((*out)++) = *((*in)++);
+	**out = **in;
 }
 
 int removeChain(int chainIndex)
@@ -154,4 +162,17 @@ int removeChain(int chainIndex)
 	}
 	free(chainToRemove);
 	return 0;
+}
+
+int newChainLink(int chainIndex)
+{
+	//is memory already allocated? How does that work with unions (just allocate for biggest?)
+	//set new final node's next pointer to NULL
+	//set final node's next node pointer to new node
+}
+int removeChainLink(int chainIndex, int chainLinkIndex)
+{
+	//if root chain: 
+	//if next chain exists:
+	//set root chain to next chain	
 }
