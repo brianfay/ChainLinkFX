@@ -6,22 +6,20 @@ typedef float SAMPLE;
 
 typedef enum EffectType
 {
-	EMPTY,
-	DELAY,
+	EMPTY=0,
+	DELAY=1
 } EffectType;
 
 typedef struct DelayData
 {
 	float* delayBuffer;
+	int writeIndex;
+	int readIndex;
+	int bufferSize;
 	int delayTimeInMs;
 	int delayTimeInSamples;
 	float feedback;
 } DelayData;
-
-typedef union EffectData
-{
-	DelayData;
-} EffectData;
 
 //A ChainLink contains a function pointer to an effect function, and data for that effect to use
 //Each Chain will refer to a list of ChainLinks - its serial list of effects
@@ -31,7 +29,7 @@ typedef struct ChainLink
 	//function pointer to audio effect function
 	EffectType effectType;
 	void(*effectFunction)();
-	EffectData effectData;
+	void * effectData;
 	struct ChainLink* nextLink;
 	//we want to pass this data to the callback
 	int numInputChannels, numOutputChannels;
@@ -43,12 +41,19 @@ typedef struct ChainLink
 //Chain is implemented as a list; multiple chains allows for parallel audio processes
 typedef struct Chain
 {
-	ChainLink chainLink;
+	//this is the root chainLink in the list
+	ChainLink* chainLink;
 	struct Chain* nextChain;
 	PaStreamParameters inputParameters, outputParameters;
 	PaStream* stream;
 } Chain;
 
 
+//this effect does nothing
+void* initEmptyEffect();
+void emptyEffect(SAMPLE *in, SAMPLE *out, void *functionChain);
 
+//a delay effect
+void* initDelayEffect();
+void delayEffect(SAMPLE *in, SAMPLE *out, void *functionChain);
 #endif /* EFFECTS_H */
