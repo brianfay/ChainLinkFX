@@ -231,7 +231,7 @@ int removeChainLink(int chainIndex, int chainLinkIndex)
 			prevLink = linkToRemove;
 			linkToRemove = linkToRemove->nextLink;
 		}
-		prevLink->linkToRemove = linkToRemove->nextLink;
+		prevLink->nextLink = linkToRemove->nextLink;
 	}
 	if(linkToRemove == NULL){
 			//that's bad...
