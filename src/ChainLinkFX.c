@@ -1,20 +1,10 @@
 #include "Effects.h"
 #include "portaudio.h"
+#include "ChainLinkFX.h"
 #include <stdio.h>
 #include <stdlib.h>
 #define PA_SAMPLE_TYPE paFloat32
 
-int newChain(PaDeviceIndex inputDeviceIndex, PaDeviceIndex outputDeviceIndex);
-int removeChain(int chainIndex);
-int newChainLink(int chainIndex);
-int removeChainLink(int chainIndex, int chainLinkIndex);
-int audioCallback(const void *inputBuffer, void *outputBuffer,
-				unsigned long framesPerBuffer,
-				const PaStreamCallbackTimeInfo* timeInfo,
-				PaStreamCallbackFlags statusFlags,
-				void *userData);
-				
-void emptyEffect(SAMPLE **in, SAMPLE **out);				
 
 Chain* rootChain = NULL;
 int newChain(PaDeviceIndex inputDeviceIndex, PaDeviceIndex outputDeviceIndex)
@@ -40,8 +30,8 @@ int newChain(PaDeviceIndex inputDeviceIndex, PaDeviceIndex outputDeviceIndex)
 		fprintf(stderr,"Error: Input device is invalid.\n Maybe the device has been unplugged?");
 		goto error;
 	}
-	PaDeviceInfo* inputDeviceInfo = Pa_GetDeviceInfo(inputDeviceIndex);
-	PaDeviceInfo* outputDeviceInfo = Pa_GetDeviceInfo(outputDeviceIndex);
+	const PaDeviceInfo* inputDeviceInfo = Pa_GetDeviceInfo(inputDeviceIndex);
+	const PaDeviceInfo* outputDeviceInfo = Pa_GetDeviceInfo(outputDeviceIndex);
 	newChain->inputParameters.channelCount = inputDeviceInfo->maxInputChannels;
 	newChain->inputParameters.sampleFormat = PA_SAMPLE_TYPE;
 	newChain->inputParameters.suggestedLatency = inputDeviceInfo->defaultLowInputLatency;
@@ -55,10 +45,15 @@ int newChain(PaDeviceIndex inputDeviceIndex, PaDeviceIndex outputDeviceIndex)
 	newChain->outputParameters.sampleFormat = PA_SAMPLE_TYPE;
 	newChain->outputParameters.suggestedLatency = outputDeviceInfo->defaultLowOutputLatency;
 	newChain->outputParameters.hostApiSpecificStreamInfo = NULL;
-	//registering first (empty) ChainLink:
-	newChain->chainLink.numInputChannels = newChain->inputParameters.channelCount;
-	newChain->chainLink.numOutputChannels = newChain->outputParameters.channelCount;
-	newChain->chainLink.effectFunction = &emptyEffect;
+	
+	//set root ChainLink to empty effect that does nothing, just for... fun?
+	newChain->chainLink = malloc(sizeof(ChainLink));
+	newChain->chainLink->effectData = initEmptyEffect();
+	newChain->chainLink->effectFunction = &emptyEffect;
+	newChain->chainLink->nextLink = NULL;
+	newChain->chainLink->numInputChannels = newChain->inputParameters.channelCount;
+	newChain->chainLink->numOutputChannels = newChain->outputParameters.channelCount;
+	
 	err = Pa_OpenStream(
 			&(newChain->stream),
 			&(newChain->inputParameters),
@@ -67,7 +62,7 @@ int newChain(PaDeviceIndex inputDeviceIndex, PaDeviceIndex outputDeviceIndex)
 			paFramesPerBufferUnspecified,
 			paClipOff,
 			audioCallback,
-			&(newChain->chainLink));
+			newChain->chainLink);
 	if(err != paNoError) goto error;
 	err = Pa_StartStream(newChain->stream);
 	if( err != paNoError ) goto error;
@@ -90,13 +85,13 @@ int audioCallback( const void *inputBuffer, void *outputBuffer,
 	unsigned int i;
 	(void) timeInfo;
 	(void) statusFlags;
-	ChainLink* functionChain = (ChainLink*) userData;
+	ChainLink* functionIterator = (ChainLink*) userData;
 	int currentChannel;
 	if(inputBuffer == NULL)
 	{
 		for(i=0; i<framesPerBuffer; i++)
 		{
-			for(currentChannel = 0; currentChannel < functionChain->numOutputChannels; currentChannel++)
+			for(currentChannel = 0; currentChannel < functionIterator->numOutputChannels; currentChannel++)
 			{
 			*out++ = 0;
 			}
@@ -106,9 +101,13 @@ int audioCallback( const void *inputBuffer, void *outputBuffer,
 	{
 		for(i = 0; i<framesPerBuffer; i++)
 		{
-			for(currentChannel = 0; currentChannel < functionChain->numOutputChannels; currentChannel++)
+			for(currentChannel = 0; currentChannel < functionIterator->numOutputChannels; currentChannel++)
 			{
-			(*functionChain).effectFunction(&in,&out);
+			functionIterator->effectFunction(in,out,functionIterator);
+				while(functionIterator->nextLink != NULL){
+					functionIterator = functionIterator->nextLink;
+					functionIterator->effectFunction(in,out, functionIterator);
+				}
 			*out++;
 			*in++;
 			}
@@ -117,11 +116,8 @@ int audioCallback( const void *inputBuffer, void *outputBuffer,
 	return paContinue;
 }
 
-void emptyEffect(SAMPLE **in, SAMPLE **out)
-{
-	**out = **in;
-}
 
+//check for mem leaks - will this free all chainlinks associated with a chain?
 int removeChain(int chainIndex)
 {
 	if(rootChain == NULL){
@@ -164,15 +160,85 @@ int removeChain(int chainIndex)
 	return 0;
 }
 
-int newChainLink(int chainIndex)
+int newChainLink(int chainIndex, EffectType effectType)
 {
-	//is memory already allocated? How does that work with unions (just allocate for biggest?)
+	//malloc the chainLink
+	ChainLink* newChainLink = malloc(sizeof(ChainLink));
 	//set new final node's next pointer to NULL
+	newChainLink->nextLink = NULL;
+	//init members
+	newChainLink->numInputChannels = rootChain->inputParameters.channelCount;
+	newChainLink->numOutputChannels = rootChain->outputParameters.channelCount;
+	/*
+	switch(effectType){
+		case EMPTY:
+			newChainLink->effectData = initEmptyEffect;
+			newChainLink->effectFunction = &emptyEffect;
+		case DELAY:
+			newChainLink->effectData = initDelayEffect();
+			newChainLink->effectFunction = &delayEffect;
+		default: 
+			return -1;
+	}
+	*/
+	newChainLink->effectData = initDelayEffect();
+	newChainLink->effectFunction = &delayEffect;
+	//increment to chain index
+	int i;
+	Chain* iterator = rootChain;
+	
+	for(i = 0; i < chainIndex; i++){
+		iterator = iterator->nextChain;
+	}
+	if(iterator == NULL){
+		//this is unfortunate
+		return -1;
+	}
+	//append new chainlink to end of chainLink list:
+	ChainLink* linkIterator = iterator->chainLink;
+	while(linkIterator->nextLink != NULL){
+		linkIterator = linkIterator->nextLink;
+	}
 	//set final node's next node pointer to new node
+	linkIterator->nextLink = newChainLink;
+	
+	return 0;
 }
+
+//need to test this really really badly:
 int removeChainLink(int chainIndex, int chainLinkIndex)
 {
-	//if root chain: 
-	//if next chain exists:
+	Chain* chainIterator = rootChain;
+	
+	int i;
+	for(i = 0; i < chainIndex; i++)
+	{
+		chainIterator = chainIterator->nextChain;
+	}
+
+	ChainLink* linkToRemove = chainIterator->chainLink;
+	//if we're removing the root node:
+	if(chainLinkIndex == 0){
+		chainIterator->chainLink = chainIterator->chainLink->nextLink;
+		linkToRemove = chainIterator->chainLink;
+	}
+	//if it is not the root node:
+	else{
+		ChainLink* prevLink = linkToRemove;
+	
+		for(i = 0; i < chainLinkIndex; i++)
+		{
+			prevLink = linkToRemove;
+			linkToRemove = linkToRemove->nextLink;
+		}
+		prevLink->linkToRemove = linkToRemove->nextLink;
+	}
+	if(linkToRemove == NULL){
+			//that's bad...
+			return -1;
+	}
+	
 	//set root chain to next chain	
+	free(linkToRemove);
+	return 0;
 }

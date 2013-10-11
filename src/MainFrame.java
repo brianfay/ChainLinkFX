@@ -15,6 +15,7 @@ public class MainFrame extends JFrame{
 	Device inputDevice, outputDevice;
 	JTabbedPane streamPane;
 	AddButton addButton;
+	TestButton testButton;
 	RemoveButton removeButton;
 	
 	
@@ -39,10 +40,12 @@ public class MainFrame extends JFrame{
 		streamPane = new JTabbedPane();
 		addButton = new AddButton("Add Stream",this);
 		removeButton = new RemoveButton("Remove Stream",this);
+		testButton = new TestButton("add delay", this);
 		
 		containerPanel.add(streamPane);
 		containerPanel.add(addButton);
 		containerPanel.add(removeButton);
+		containerPanel.add(testButton);
 		
 		streamPane.setVisible(true);
 		addButton.setVisible(true);
@@ -92,5 +95,23 @@ public class MainFrame extends JFrame{
 			}
 			theFrame.pack();	
 		}	
+	}
+	private class TestButton extends JButton implements ActionListener{
+		JFrame theFrame;
+		private TestButton(String name, JFrame frame){
+			super(name);
+			theFrame = frame;
+			addActionListener(this);
+		}
+		public void actionPerformed(ActionEvent e){
+			if(streamPane.getSelectedIndex() >= 0){
+				//quicktest - add delay?
+				int err = JNIBridge.addChainLink(streamPane.getSelectedIndex(),1);
+				if(err != 0){
+					System.out.println("There was a problem initializing the chain link.");
+					return;
+				}
+			}	
+		}
 	}
 }

@@ -3,6 +3,8 @@
 #include <string.h>
 #include "portaudio.h"
 #include "ChainLinkFX_JNIBridge.h"
+#include "ChainLinkFX.h"
+#include "Effects.h"
 
 
 JNIEXPORT void JNICALL Java_ChainLinkFX_JNIBridge_initPA(JNIEnv *env,
@@ -24,7 +26,7 @@ JNIEXPORT jobject JNICALL Java_ChainLinkFX_JNIBridge_constructDevice(JNIEnv *env
 {
 	jclass customTypeClass = (*env)->FindClass(env,"ChainLinkFX/Device");
 	jmethodID midConstructor = (*env)->GetMethodID(env,customTypeClass, "<init>", "(Ljava/lang/String;III)V");
-	PaDeviceInfo* deviceInfo = Pa_GetDeviceInfo((PaDeviceIndex)deviceIndex);
+	const PaDeviceInfo* deviceInfo = Pa_GetDeviceInfo((PaDeviceIndex)deviceIndex);
 	jint maxInputChannels = deviceInfo->maxInputChannels;
 	jint maxOutputChannels = deviceInfo->maxOutputChannels;;
 	char* deviceText = (char*)malloc(strlen(deviceInfo->name));
@@ -57,7 +59,17 @@ JNIEXPORT jint JNICALL Java_ChainLinkFX_JNIBridge_removeChain(JNIEnv *env,
 	jobject callingObject, jint chainIndex)
 {
 	int err = removeChain((int)chainIndex);
-	return 0;
+	return err;
+}
+
+JNIEXPORT jint JNICALL Java_ChainLinkFX_JNIBridge_addChainLink(JNIEnv *env,
+	jobject callingObject, jint chainIndex, jint effectType)
+{
+	int effectTypeInt = (int)effectType;
+	//hope this cast to enum will work
+	//int err = newChainLink((int)chainIndex, (EffectType)effectTypeInt);
+	int err = newChainLink((int)chainIndex, 1);
+	return err;
 }
 
 JNIEXPORT jint JNICALL Java_ChainLinkFX_JNIBridge_setParameter(JNIEnv *env,
