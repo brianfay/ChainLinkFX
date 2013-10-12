@@ -4,6 +4,9 @@
 #ifndef CHAINLINKFX_H
 #define CHAINLINKFX_H
 
+//effects may need to know the sample rate and input output channel numbers
+int sampleRate;
+int numInputChannels, numOutputChannels;
 /* allocates memory for a new Chain, initializes a stream
  */
 int newChain(PaDeviceIndex inputDeviceIndex, PaDeviceIndex outputDeviceIndex);
@@ -12,7 +15,7 @@ int newChain(PaDeviceIndex inputDeviceIndex, PaDeviceIndex outputDeviceIndex);
  * with it, stops the stream
  */
 int removeChain(int chainIndex);
-int newChainLink(int chainIndex, EffectType effectType);
+int newChainLink(int chainIndex, int effectType);
 int removeChainLink(int chainIndex, int chainLinkIndex);
 int audioCallback(const void *inputBuffer, void *outputBuffer,
 				unsigned long framesPerBuffer,

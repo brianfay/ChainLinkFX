@@ -7,10 +7,11 @@ typedef float SAMPLE;
 typedef enum EffectType
 {
 	EMPTY=0,
-	DELAY=1
+	FEEDBACKDELAY=1,
+	SINGLETAPDELAY=2
 } EffectType;
 
-typedef struct DelayData
+typedef struct FeedbackDelayData
 {
 	float* delayBuffer;
 	int writeIndex;
@@ -19,7 +20,18 @@ typedef struct DelayData
 	int delayTimeInMs;
 	int delayTimeInSamples;
 	float feedback;
-} DelayData;
+} FeedbackDelayData;
+
+typedef struct SingleTapDelayData
+{
+	float* delayBuffer;
+	int writeIndex;
+	int readIndex;
+	int bufferSize;
+	int delayTimeInMs;
+	int delayTimeInSamples;
+	float gain;
+} SingleTapDelayData;
 
 //A ChainLink contains a function pointer to an effect function, and data for that effect to use
 //Each Chain will refer to a list of ChainLinks - its serial list of effects
@@ -32,7 +44,6 @@ typedef struct ChainLink
 	void * effectData;
 	struct ChainLink* nextLink;
 	//we want to pass this data to the callback
-	int numInputChannels, numOutputChannels;
 	//should include pointer to data (fx parameters - union type?)
 } ChainLink;
 
@@ -54,6 +65,9 @@ void* initEmptyEffect();
 void emptyEffect(SAMPLE *in, SAMPLE *out, void *functionChain);
 
 //a delay effect
-void* initDelayEffect();
-void delayEffect(SAMPLE *in, SAMPLE *out, void *functionChain);
+void* initFeedbackDelayEffect();
+void feedbackDelayEffect(SAMPLE *in, SAMPLE *out, void *functionChain);
+
+void* initSingleTapDelayEffect();
+void singleTapDelayEffect(SAMPLE *in, SAMPLE *out, void *functionChain);
 #endif /* EFFECTS_H */
