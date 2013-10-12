@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #define PA_SAMPLE_TYPE paFloat32
 
-
 Chain* rootChain = NULL;
 int newChain(PaDeviceIndex inputDeviceIndex, PaDeviceIndex outputDeviceIndex)
 {
@@ -51,8 +50,13 @@ int newChain(PaDeviceIndex inputDeviceIndex, PaDeviceIndex outputDeviceIndex)
 	newChain->chainLink->effectData = initEmptyEffect();
 	newChain->chainLink->effectFunction = &emptyEffect;
 	newChain->chainLink->nextLink = NULL;
-	newChain->chainLink->numInputChannels = newChain->inputParameters.channelCount;
-	newChain->chainLink->numOutputChannels = newChain->outputParameters.channelCount;
+	
+	//set global number of input and output channels
+	numInputChannels = newChain->inputParameters.channelCount;
+	numOutputChannels = newChain->outputParameters.channelCount;
+	
+	//set the global sampleRate here
+	sampleRate = inputDeviceInfo->defaultSampleRate;
 	
 	err = Pa_OpenStream(
 			&(newChain->stream),
@@ -91,7 +95,7 @@ int audioCallback( const void *inputBuffer, void *outputBuffer,
 	{
 		for(i=0; i<framesPerBuffer; i++)
 		{
-			for(currentChannel = 0; currentChannel < functionIterator->numOutputChannels; currentChannel++)
+			for(currentChannel = 0; currentChannel < numOutputChannels; currentChannel++)
 			{
 			*out++ = 0;
 			}
@@ -99,19 +103,45 @@ int audioCallback( const void *inputBuffer, void *outputBuffer,
 	}
 	else
 	{
-		for(i = 0; i<framesPerBuffer; i++)
+		//mono input, any number of output channels
+		if(numInputChannels == 1)
 		{
-			for(currentChannel = 0; currentChannel < functionIterator->numOutputChannels; currentChannel++)
+			for(i = 0; i<framesPerBuffer; i++)
 			{
-			*out = *in;
-			functionIterator->effectFunction(in,out,functionIterator);
-				while(functionIterator->nextLink != NULL){
-					functionIterator = functionIterator->nextLink;
-					functionIterator->effectFunction(in,out,functionIterator);
+				for(currentChannel = 0; currentChannel < numOutputChannels; currentChannel++)
+				{
+				//will replace this with an input gain chainlink, allowing for bypass
+				*out = *in;
+				functionIterator->effectFunction(in,out,functionIterator);
+					while(functionIterator->nextLink != NULL){
+						functionIterator = functionIterator->nextLink;
+						functionIterator->effectFunction(in,out,functionIterator);
+					}
+				functionIterator = (ChainLink*) userData;
+				out++;
 				}
-			functionIterator = (ChainLink*) userData;
-			*out++;
-			*in++;
+				in++;
+			}
+		}
+		
+		//equal number of input and output channels eg. stereo in, stereo out
+		else if(numInputChannels == numOutputChannels)
+		{
+			for(i = 0; i<framesPerBuffer; i++)
+			{
+				for(currentChannel = 0; currentChannel < numOutputChannels; currentChannel++)
+				{
+				//will replace this with an input gain chainlink, allowing for bypass
+				*out = *in;
+				functionIterator->effectFunction(in,out,functionIterator);
+					while(functionIterator->nextLink != NULL){
+						functionIterator = functionIterator->nextLink;
+						functionIterator->effectFunction(in,out,functionIterator);
+					}
+				functionIterator = (ChainLink*) userData;
+				*out++;
+				*in++;
+				}
 			}
 		}
 	}
@@ -162,30 +192,34 @@ int removeChain(int chainIndex)
 	return 0;
 }
 
-int newChainLink(int chainIndex, EffectType effectType)
+int newChainLink(int chainIndex, int effectType)
 {
 	//malloc the chainLink
 	ChainLink* newChainLink = malloc(sizeof(ChainLink));
 	//set new final node's next pointer to NULL
 	newChainLink->nextLink = NULL;
 	//init members
-	newChainLink->numInputChannels = rootChain->inputParameters.channelCount;
-	newChainLink->numOutputChannels = rootChain->outputParameters.channelCount;
-	/*
+	
 	switch(effectType){
 		case EMPTY:
 			newChainLink->effectData = initEmptyEffect;
 			newChainLink->effectFunction = &emptyEffect;
-		case DELAY:
-			newChainLink->effectData = initDelayEffect();
-			newChainLink->effectFunction = &delayEffect;
+			break;
+		case FEEDBACKDELAY:
+			newChainLink->effectData = initFeedbackDelayEffect();
+			newChainLink->effectFunction = &feedbackDelayEffect;
+			break;
+		case SINGLETAPDELAY:
+			newChainLink->effectData = initSingleTapDelayEffect();
+			newChainLink->effectFunction = &singleTapDelayEffect;
+			break;
 		default: 
 			return -1;
 	}
-	*/
+	
 	newChainLink->effectType = effectType;
-	newChainLink->effectData = initDelayEffect();
-	newChainLink->effectFunction = &delayEffect;
+	//newChainLink->effectData = initSingleTapDelayEffect();
+	//newChainLink->effectFunction = &singleTapDelayEffect;
 	//increment to chain index
 	int i;
 	Chain* iterator = rootChain;
@@ -258,10 +292,11 @@ int setParameter(int chainIndex, int effectIndex, int parameterIndex, int value)
 		effectIterator = effectIterator->nextLink;
 	}
 	switch(effectIterator->effectType){
-		case DELAY:
-		{ //using brackets in this statement creates a scope and allows variables to be created
-			//this is necessary because to get a usable pointer from the void ptr, effectData
-			DelayData* delayData = (DelayData*) effectIterator->effectData;
+		//using brackets in the switch block creates a scope and allows variables to be created
+		//this is necessary because to get a usable pointer from the void ptr, effectData
+		case FEEDBACKDELAY:
+		{ 
+			FeedbackDelayData* delayData = (FeedbackDelayData*) effectIterator->effectData;
 			if(parameterIndex == 0){
 				delayData->delayTimeInMs = value;
 			}
@@ -270,6 +305,17 @@ int setParameter(int chainIndex, int effectIndex, int parameterIndex, int value)
 			}
 			break;
 		}
+		case SINGLETAPDELAY:
+		{ 
+			SingleTapDelayData* delayData = (SingleTapDelayData*) effectIterator->effectData;
+			if(parameterIndex == 0){
+				delayData->delayTimeInMs = value;
+			}
+			else if(parameterIndex == 1){
+				delayData->gain = value;
+			}
+			break;
+		}		
 		default:
 			return -1;
 	}

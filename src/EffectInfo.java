@@ -1,7 +1,7 @@
 package ChainLinkFX;
 
 public class EffectInfo{
-	public static String[] effectNameList = {"Empty","Delay"};
+	public static String[] effectNameList = {"Empty","Delay","Single Tap Delay"};
 	
 	public static EffectPanel addEffectPanel(int chainIndex, int linkIndex, int effectType){
 		EffectPanel effectPanel;
