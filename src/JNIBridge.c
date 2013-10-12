@@ -68,7 +68,7 @@ JNIEXPORT jint JNICALL Java_ChainLinkFX_JNIBridge_addChainLink(JNIEnv *env,
 	int effectTypeInt = (int)effectType;
 	//hope this cast to enum will work
 	//int err = newChainLink((int)chainIndex, (EffectType)effectTypeInt);
-	int err = newChainLink((int)chainIndex, 1);
+	int err = newChainLink((int)chainIndex, effectTypeInt);
 	return err;
 }
 
@@ -82,5 +82,10 @@ JNIEXPORT jint JNICALL Java_ChainLinkFX_JNIBridge_removeChainLink(JNIEnv *env,
 JNIEXPORT jint JNICALL Java_ChainLinkFX_JNIBridge_setParameter(JNIEnv *env,
 	jobject callingObject, jint chainIndex,jint effectIndex,jint parameterIndex,jfloat value)
 {
+	int err;
+	err = setParameter((int)chainIndex,(int)effectIndex,(int)parameterIndex,(int)value);
+	if(err != 0){
+		return -1;
+	}
 	return 0;
 }

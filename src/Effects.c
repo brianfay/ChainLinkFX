@@ -10,8 +10,7 @@ void* initEmptyEffect()
 
 void emptyEffect(SAMPLE *in, SAMPLE *out, void *functionChain)
 {
-	//just set output to zero
-	*out = *in;
+	//seriously do nothing here
 }
 
 void* initDelayEffect()
@@ -32,7 +31,7 @@ void delayEffect(SAMPLE *in, SAMPLE *out, void *functionChain)
 {
 	ChainLink* chainLink = (ChainLink*) functionChain;
 	DelayData* delayData = (DelayData*) chainLink->effectData;
-	*out = *in;
+	//*out = *in;
 	float actualDelayInSamples= (float) delayData->delayTimeInMs * 44800.0 * 0.001;
 	delayData->delayTimeInSamples = (int)actualDelayInSamples;
 	delayData->readIndex = delayData->writeIndex;

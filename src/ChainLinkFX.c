@@ -103,11 +103,13 @@ int audioCallback( const void *inputBuffer, void *outputBuffer,
 		{
 			for(currentChannel = 0; currentChannel < functionIterator->numOutputChannels; currentChannel++)
 			{
+			*out = *in;
 			functionIterator->effectFunction(in,out,functionIterator);
 				while(functionIterator->nextLink != NULL){
 					functionIterator = functionIterator->nextLink;
-					functionIterator->effectFunction(in,out, functionIterator);
+					functionIterator->effectFunction(in,out,functionIterator);
 				}
+			functionIterator = (ChainLink*) userData;
 			*out++;
 			*in++;
 			}
@@ -181,6 +183,7 @@ int newChainLink(int chainIndex, EffectType effectType)
 			return -1;
 	}
 	*/
+	newChainLink->effectType = effectType;
 	newChainLink->effectData = initDelayEffect();
 	newChainLink->effectFunction = &delayEffect;
 	//increment to chain index
@@ -240,5 +243,35 @@ int removeChainLink(int chainIndex, int chainLinkIndex)
 	
 	//set root chain to next chain	
 	free(linkToRemove);
+	return 0;
+}
+
+int setParameter(int chainIndex, int effectIndex, int parameterIndex, int value)
+{
+	int i;
+	Chain* iterator = rootChain;
+	for(i = 0; i < chainIndex; i++){
+		iterator = iterator->nextChain;
+	}
+	ChainLink* effectIterator = iterator->chainLink;
+	for(i = 0; i < effectIndex; i++){
+		effectIterator = effectIterator->nextLink;
+	}
+	switch(effectIterator->effectType){
+		case DELAY:
+		{ //using brackets in this statement creates a scope and allows variables to be created
+			//this is necessary because to get a usable pointer from the void ptr, effectData
+			DelayData* delayData = (DelayData*) effectIterator->effectData;
+			if(parameterIndex == 0){
+				delayData->delayTimeInMs = value;
+			}
+			else if(parameterIndex == 1){
+				delayData->feedback = value;
+			}
+			break;
+		}
+		default:
+			return -1;
+	}
 	return 0;
 }
