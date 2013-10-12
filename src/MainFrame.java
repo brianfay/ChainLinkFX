@@ -69,7 +69,7 @@ public class MainFrame extends JFrame{
 				System.out.println("There was a problem initializing the chain.");
 				return;
 			}
-			streamPane.add(new JPanel().add(new JLabel("Emptiness")));
+			streamPane.add(new ChainPanel(streamPane.getTabCount()));
 			theFrame.pack();
 			theFrame.repaint();
 		}

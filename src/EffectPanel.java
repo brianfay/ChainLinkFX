@@ -1,3 +1,5 @@
+package ChainLinkFX;
+
 import javax.swing.JPanel;
 import javax.swing.JLabel;
 import javax.swing.JFrame;
@@ -8,7 +10,7 @@ import java.awt.event.*;
 public abstract class EffectPanel extends JPanel{
 		RemoveButton removeButton;
 		
-		public EffectPanel(String name){
+		public EffectPanel(String name /*needs the indices*/){
 			setLayout(new BoxLayout(this,BoxLayout.PAGE_AXIS));
 			JLabel title = new JLabel(name);
 			removeButton = new RemoveButton("Remove Effect");
@@ -28,7 +30,8 @@ public abstract class EffectPanel extends JPanel{
 			addActionListener(this);
 		}
 		public void actionPerformed(ActionEvent e){
-				System.out.println("removing effect");
+			//JNIBridge.removeChainLink();
+			System.out.println("removing effect");
 		}	
 	}
 }
