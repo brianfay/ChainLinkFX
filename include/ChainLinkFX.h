@@ -19,6 +19,6 @@ int audioCallback(const void *inputBuffer, void *outputBuffer,
 				const PaStreamCallbackTimeInfo* timeInfo,
 				PaStreamCallbackFlags statusFlags,
 				void *userData);
-
+int setParameter(int chainIndex, int effectIndex, int parameterIndex, int value);
 
 #endif /* CHAINLINKFX_H */

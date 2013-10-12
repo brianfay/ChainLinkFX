@@ -58,10 +58,10 @@ JNIEXPORT jint JNICALL Java_ChainLinkFX_JNIBridge_addChainLink
 /*
  * Class:     ChainLinkFX_JNIBridge
  * Method:    removeChainLink
- * Signature: ()I
+ * Signature: (II)I
  */
 JNIEXPORT jint JNICALL Java_ChainLinkFX_JNIBridge_removeChainLink
-  (JNIEnv *, jclass);
+  (JNIEnv *, jclass, jint, jint);
 
 /*
  * Class:     ChainLinkFX_JNIBridge
