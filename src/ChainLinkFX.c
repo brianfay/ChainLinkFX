@@ -190,6 +190,7 @@ int removeChain(int chainIndex)
 	while(Pa_IsStreamStopped(chainToRemove->stream) != 1){
 		//do nothing; block until stream is finished
 	}
+	Pa_CloseStream(chainToRemove->stream);
 	free(chainToRemove);
 	return 0;
 }
@@ -250,12 +251,10 @@ int removeChainLink(int chainIndex, int chainLinkIndex)
 	Chain* chainIterator = rootChain;
 	
 	int i;
-	/*
 	for(i = 0; i < chainIndex; i++)
 	{
 		chainIterator = chainIterator->nextChain;
 	}
-	*/
 	
 	chainLinkIndex += 1;
 	ChainLink* linkToRemove = chainIterator->chainLink;

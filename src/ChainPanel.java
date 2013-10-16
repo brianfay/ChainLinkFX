@@ -81,7 +81,8 @@ public class ChainPanel extends JPanel{
 			addActionListener(this);
 		}
 		public void actionPerformed(ActionEvent e){
-			int selectedEffect = effectComboBox.getSelectedIndex();
+			//adding 1 so we don't need to deal with the reserved empty effect
+			int selectedEffect = effectComboBox.getSelectedIndex() + 1;
 			EffectPanel effectPanel = EffectInfo.addEffectPanel(selectedEffect, chainPanel);
 			chainPanel.addChainLink(selectedEffect, effectPanel);
 		}

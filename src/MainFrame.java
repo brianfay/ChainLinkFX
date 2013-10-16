@@ -94,6 +94,7 @@ public class MainFrame extends JFrame{
 			if(chainPanel.equals(chainList.get(i))){
 				chainIndex = i;
 				System.out.println("removing... chainIndex = " + chainIndex);
+				System.out.println("linkIndex = " + linkIndex);
 			}
 		}
 		int err = JNIBridge.removeChainLink(chainIndex, linkIndex);

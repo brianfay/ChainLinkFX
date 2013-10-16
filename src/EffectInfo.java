@@ -1,21 +1,21 @@
 package ChainLinkFX;
 
 public class EffectInfo{
-	public static String[] effectNameList = {"Empty","Delay","Single Tap Delay"};
+
+	public static String[] effectNameList = {"Feedback Delay","Single Tap Delay"};
 	
 	public static EffectPanel addEffectPanel(int effectType, ChainPanel chainPanel){
 		EffectPanel effectPanel;
 		switch(effectType){
-			case 0:
-				System.out.println("what am i doing about the empty effect?");
-				effectPanel = new DelayPanel(chainPanel);
-				break;
 			case 1:
-				effectPanel = new DelayPanel(chainPanel);
+				System.out.println("what am i doing about the empty effect?");
+				effectPanel = new FeedbackDelayPanel(chainPanel);
+				break;
+			case 2:
+				effectPanel = new SingleTapDelayPanel(chainPanel);
 				break;
 			default:
-				effectPanel = new DelayPanel(chainPanel);
-				break;
+				effectPanel = new FeedbackDelayPanel(chainPanel);
 		}
 		effectPanel.setVisible(true);
 		return effectPanel;
