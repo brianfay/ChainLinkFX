@@ -10,48 +10,45 @@ import javax.swing.event.*;
 import java.awt.event.*;
 
 public abstract class EffectPanel extends JPanel{
+	ChainPanel chainPanel;
 	RemoveButton removeButton;
-	private int chainIndex, linkIndex;
 		
-	public EffectPanel(String name, int _chainIndex, int _linkIndex){
-		chainIndex = _chainIndex;
-		linkIndex = _linkIndex;
+	public EffectPanel(String name, ChainPanel _chainPanel){
 		setLayout(new BoxLayout(this,BoxLayout.PAGE_AXIS));
+		chainPanel = _chainPanel;
 		JLabel title = new JLabel(name);
-		removeButton = new RemoveButton("Remove Effect");
+		removeButton = new RemoveButton(this);
 		add(title);
 		add(removeButton);
 		setVisible(true);
 	}
-		
-	//need to override this
-	public void remove(){
-
-	}
 	
 	private class RemoveButton extends JButton implements ActionListener{
-		private RemoveButton(String name){
-			super(name);
+		EffectPanel effectPanel;
+		private RemoveButton(EffectPanel _effectPanel){
+			super("Remove Effect");
+			effectPanel = _effectPanel;
 			addActionListener(this);
 		}
 		public void actionPerformed(ActionEvent e){
-			//JNIBridge.removeChainLink();
-			remove();
+			effectPanel.chainPanel.removeChainLink(effectPanel);
 			System.out.println("removing effect");
 		}	
 	}
 	protected class ControlSlider extends JSlider implements ChangeListener{
 		int parameterIndex;
-		protected ControlSlider(int min, int max, int paramIndex){
+		EffectPanel effectPanel;
+		protected ControlSlider(int min, int max, int paramIndex, EffectPanel _effectPanel){
 			super(min,max);
 			parameterIndex = paramIndex;
+			effectPanel = _effectPanel;
 			addChangeListener(this);
 		}
 		public void stateChanged(ChangeEvent e) {
 			//chain, effect, parameter, index, float, value
 			int err = -1;
-			Object m = e.getSource();
-			err = JNIBridge.setParameter(chainIndex,linkIndex,parameterIndex,this.getValue());
+			//Object m = e.getSource();
+			err = effectPanel.chainPanel.setParameter(parameterIndex,this.getValue(), effectPanel);
 			if(err !=0 ){
 				System.out.println("There was a problem setting an effect parameter.");
 			}

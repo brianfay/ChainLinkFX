@@ -45,7 +45,9 @@ int newChain(PaDeviceIndex inputDeviceIndex, PaDeviceIndex outputDeviceIndex)
 	newChain->outputParameters.suggestedLatency = outputDeviceInfo->defaultLowOutputLatency;
 	newChain->outputParameters.hostApiSpecificStreamInfo = NULL;
 	
-	//set root ChainLink to empty effect that does nothing, just for... fun?
+	//set root ChainLink to empty effect that does nothing, because it needs to be initialized
+	//to something in order to be passed to the callback
+	//should probably set this to be a gain adjustment; control output level and input level
 	newChain->chainLink = malloc(sizeof(ChainLink));
 	newChain->chainLink->effectData = initEmptyEffect();
 	newChain->chainLink->effectFunction = &emptyEffect;
@@ -248,39 +250,43 @@ int removeChainLink(int chainIndex, int chainLinkIndex)
 	Chain* chainIterator = rootChain;
 	
 	int i;
+	/*
 	for(i = 0; i < chainIndex; i++)
 	{
 		chainIterator = chainIterator->nextChain;
 	}
-
+	*/
+	
+	chainLinkIndex += 1;
 	ChainLink* linkToRemove = chainIterator->chainLink;
-	//if we're removing the root node:
+	
+	//if we're removing the root node: (should not happen because root node is reserved)
+	/*
 	if(chainLinkIndex == 0){
 		chainIterator->chainLink = chainIterator->chainLink->nextLink;
 		linkToRemove = chainIterator->chainLink;
 	}
+	*/
 	//if it is not the root node:
-	else{
-		ChainLink* prevLink = linkToRemove;
-	
-		for(i = 0; i < chainLinkIndex; i++)
-		{
-			prevLink = linkToRemove;
-			linkToRemove = linkToRemove->nextLink;
-		}
-		prevLink->nextLink = linkToRemove->nextLink;
+	ChainLink* prevLink = linkToRemove;
+	for(i = 0; i < chainLinkIndex; i++)
+	{
+		prevLink = linkToRemove;
+		linkToRemove = linkToRemove->nextLink;
 	}
+	prevLink->nextLink = linkToRemove->nextLink;
+	
 	if(linkToRemove == NULL){
 			//that's bad...
 			return -1;
 	}
 	
-	//set root chain to next chain	
+	//here's a potential pitfall... what if the memory is freed while the processing is ocurring?	
 	free(linkToRemove);
 	return 0;
 }
 
-int setParameter(int chainIndex, int effectIndex, int parameterIndex, int value)
+int setParameter(int chainIndex, int linkIndex, int parameterIndex, int value)
 {
 	int i;
 	Chain* iterator = rootChain;
@@ -288,7 +294,8 @@ int setParameter(int chainIndex, int effectIndex, int parameterIndex, int value)
 		iterator = iterator->nextChain;
 	}
 	ChainLink* effectIterator = iterator->chainLink;
-	for(i = 0; i < effectIndex; i++){
+	linkIndex += 1; //the first link is reserved for input/output gain.
+	for(i = 0; i < linkIndex; i++){
 		effectIterator = effectIterator->nextLink;
 	}
 	switch(effectIterator->effectType){

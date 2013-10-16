@@ -19,10 +19,11 @@ void* initFeedbackDelayEffect()
 {
 	void* effectPtr;
 	FeedbackDelayData* delayData = malloc(sizeof(FeedbackDelayData));
-	delayData->delayBuffer = malloc(sizeof(float)*sampleRate*6); //6 second delay buffer
+	//quickly checking absurd memory use
+	delayData->delayBuffer = malloc(sizeof(float)*sampleRate*600); //6 second delay buffer
 	delayData->writeIndex = 0;
 	delayData->readIndex = 0;
-	delayData->bufferSize = sampleRate*6;
+	delayData->bufferSize = sampleRate*600;
 	delayData->delayTimeInMs = 1000;
 	delayData->feedback = 50;
 	effectPtr = delayData;
