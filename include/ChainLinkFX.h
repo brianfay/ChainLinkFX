@@ -1,4 +1,4 @@
-#include "portaudio.h"
+#include <portaudio.h>
 #include "Effects.h"
 
 #ifndef CHAINLINKFX_H

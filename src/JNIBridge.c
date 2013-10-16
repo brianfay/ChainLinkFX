@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "portaudio.h"
+#include <portaudio.h>
 #include "ChainLinkFX_JNIBridge.h"
 #include "ChainLinkFX.h"
 #include "Effects.h"
