@@ -15,6 +15,11 @@ void emptyEffect(SAMPLE *in, SAMPLE *out, void *functionChain)
 	//seriously do nothing here
 }
 
+void freeEmptyEffect(ChainLink* chainLink)
+{
+	
+}
+
 void* initFeedbackDelayEffect()
 {
 	void* effectPtr;

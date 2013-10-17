@@ -49,6 +49,7 @@ int newChain(PaDeviceIndex inputDeviceIndex, PaDeviceIndex outputDeviceIndex)
 	//to something in order to be passed to the callback
 	//should probably set this to be a gain adjustment; control output level and input level
 	newChain->chainLink = malloc(sizeof(ChainLink));
+	newChain->chainLink->effectType = EMPTY;
 	newChain->chainLink->effectData = initEmptyEffect();
 	newChain->chainLink->effectFunction = &emptyEffect;
 	newChain->chainLink->nextLink = NULL;
@@ -161,6 +162,20 @@ int removeChain(int chainIndex)
 	}
 	Chain* chainToRemove = rootChain;
 	int i;
+	
+	//start by removing all chainLinks from the chain to free memory
+	ChainLink * chainLinkIterator = chainToRemove->chainLink;
+	i = 0;
+	while(chainLinkIterator->nextLink != NULL){
+		chainLinkIterator = chainLinkIterator->nextLink;
+		i++;
+	}
+	int j;
+	for(j = i; j >= 0; j--){
+		fprintf(stderr, "in for loop, removing link %d \n", j);
+		removeChainLink(chainIndex, j);
+	}
+	
 	//if root chain: 
 	if(chainIndex == 0){
 		//if next chain exists:
@@ -185,12 +200,14 @@ int removeChain(int chainIndex)
 		printf("chainToRemove was null!\n");
 		return -1;
 	}
+	
 	Pa_StopStream(chainToRemove->stream);
 	//this returns 1 when stream is still active
 	while(Pa_IsStreamStopped(chainToRemove->stream) != 1){
 		//do nothing; block until stream is finished
 	}
 	Pa_CloseStream(chainToRemove->stream);
+	
 	free(chainToRemove);
 	return 0;
 }
@@ -245,7 +262,6 @@ int newChainLink(int chainIndex, int effectType)
 	return 0;
 }
 
-//need to test this really really badly:
 int removeChainLink(int chainIndex, int chainLinkIndex)
 {
 	Chain* chainIterator = rootChain;
@@ -256,7 +272,6 @@ int removeChainLink(int chainIndex, int chainLinkIndex)
 		chainIterator = chainIterator->nextChain;
 	}
 	
-	chainLinkIndex += 1;
 	ChainLink* linkToRemove = chainIterator->chainLink;
 	
 	//if we're removing the root node: (should not happen because root node is reserved)

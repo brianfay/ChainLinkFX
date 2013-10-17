@@ -75,7 +75,10 @@ JNIEXPORT jint JNICALL Java_ChainLinkFX_JNIBridge_addChainLink(JNIEnv *env,
 JNIEXPORT jint JNICALL Java_ChainLinkFX_JNIBridge_removeChainLink(JNIEnv *env,
 	jobject callingObject, jint chainIndex, jint linkIndex)
 {
-	int err = removeChainLink((int)chainIndex, (int)linkIndex);
+	int chainLinkIndex = (int)linkIndex;
+	//add one, because the first chainLink is not dealt with in the java portion
+	chainLinkIndex += 1;
+	int err = removeChainLink((int)chainIndex, chainLinkIndex);
 	return err;
 }
 
