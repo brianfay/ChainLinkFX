@@ -6,10 +6,16 @@ typedef float SAMPLE;
 
 typedef enum EffectType
 {
-	EMPTY=0,
+	IO=0,
 	FEEDBACKDELAY=1,
 	SINGLETAPDELAY=2
 } EffectType;
+
+typedef struct IOData
+{
+	int inputGain;
+	int outputGain;
+} IOData;
 
 typedef struct FeedbackDelayData
 {
@@ -61,9 +67,9 @@ typedef struct Chain
 
 
 //this effect does nothing
-void* initEmptyEffect();
-void emptyEffect(SAMPLE *in, SAMPLE *out, void *functionChain);
-void freeEmptyEffect(ChainLink *);
+void* initIOEffect();
+void IOEffect(SAMPLE *in, SAMPLE *out, void *functionChain);
+void freeIOEffect(ChainLink *);
 
 //a delay effect
 void* initFeedbackDelayEffect();

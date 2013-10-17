@@ -3,21 +3,26 @@
 
 extern int sampleRate;
 
-void* initEmptyEffect()
+void* initIOEffect()
 {
-	void* effectPtr = NULL;
-	
+	void* effectPtr;
+	IOData* ioData = malloc(sizeof(ioData));
+	ioData->inputGain = 100;
+	ioData->outputGain = 100;
+	effectPtr = ioData;
 	return effectPtr;
 }
 
-void emptyEffect(SAMPLE *in, SAMPLE *out, void *functionChain)
+void IOEffect(SAMPLE *in, SAMPLE *out, void *functionChain)
 {
-	//seriously do nothing here
+	//this does nothing
 }
 
-void freeEmptyEffect(ChainLink* chainLink)
+void freeIOEffect(ChainLink* chainLink)
 {
-	
+	IOData * data;
+	data = chainLink->effectData;
+	free(data);
 }
 
 void* initFeedbackDelayEffect()

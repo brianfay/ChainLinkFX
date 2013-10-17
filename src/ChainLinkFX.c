@@ -49,9 +49,9 @@ int newChain(PaDeviceIndex inputDeviceIndex, PaDeviceIndex outputDeviceIndex)
 	//to something in order to be passed to the callback
 	//should probably set this to be a gain adjustment; control output level and input level
 	newChain->chainLink = malloc(sizeof(ChainLink));
-	newChain->chainLink->effectType = EMPTY;
-	newChain->chainLink->effectData = initEmptyEffect();
-	newChain->chainLink->effectFunction = &emptyEffect;
+	newChain->chainLink->effectType = IO;
+	newChain->chainLink->effectData = initIOEffect();
+	newChain->chainLink->effectFunction = &IOEffect;
 	newChain->chainLink->nextLink = NULL;
 	
 	//set global number of input and output channels
@@ -93,6 +93,7 @@ int audioCallback( const void *inputBuffer, void *outputBuffer,
 	(void) timeInfo;
 	(void) statusFlags;
 	ChainLink* functionIterator = (ChainLink*) userData;
+	IOData* ioData = functionIterator->effectData;
 	int currentChannel;
 	if(inputBuffer == NULL)
 	{
@@ -113,14 +114,16 @@ int audioCallback( const void *inputBuffer, void *outputBuffer,
 			{
 				for(currentChannel = 0; currentChannel < numOutputChannels; currentChannel++)
 				{
-				//will replace this with an input gain chainlink, allowing for bypass
-				*out = *in;
+				//scale input
+				*out = (*in * (ioData->inputGain * 0.01));
 				functionIterator->effectFunction(in,out,functionIterator);
 					while(functionIterator->nextLink != NULL){
 						functionIterator = functionIterator->nextLink;
 						functionIterator->effectFunction(in,out,functionIterator);
 					}
 				functionIterator = (ChainLink*) userData;
+				//scale output
+				*out *= (ioData->outputGain * 0.01);
 				out++;
 				}
 				in++;
@@ -134,14 +137,16 @@ int audioCallback( const void *inputBuffer, void *outputBuffer,
 			{
 				for(currentChannel = 0; currentChannel < numOutputChannels; currentChannel++)
 				{
-				//will replace this with an input gain chainlink, allowing for bypass
-				*out = *in;
+				//scale input
+				*out = (*in * (ioData->inputGain * 0.01));
 				functionIterator->effectFunction(in,out,functionIterator);
 					while(functionIterator->nextLink != NULL){
 						functionIterator = functionIterator->nextLink;
 						functionIterator->effectFunction(in,out,functionIterator);
 					}
 				functionIterator = (ChainLink*) userData;
+				//scale output
+				*out *= (ioData->outputGain * 0.01);
 				*out++;
 				*in++;
 				}
@@ -221,9 +226,9 @@ int newChainLink(int chainIndex, int effectType)
 	//init members
 	
 	switch(effectType){
-		case EMPTY:
-			newChainLink->effectData = initEmptyEffect;
-			newChainLink->effectFunction = &emptyEffect;
+		case IO:
+			newChainLink->effectData = initIOEffect;
+			newChainLink->effectFunction = &IOEffect;
 			break;
 		case FEEDBACKDELAY:
 			newChainLink->effectData = initFeedbackDelayEffect();
@@ -297,8 +302,8 @@ int removeChainLink(int chainIndex, int chainLinkIndex)
 	
 	//
 	switch(linkToRemove->effectType){
-		case EMPTY:
-			freeEmptyEffect(linkToRemove);
+		case IO:
+			freeIOEffect(linkToRemove);
 			break;
 		case FEEDBACKDELAY:
 			freeFeedbackDelayEffect(linkToRemove);
@@ -330,6 +335,16 @@ int setParameter(int chainIndex, int linkIndex, int parameterIndex, int value)
 	switch(effectIterator->effectType){
 		//using brackets in the switch block creates a scope and allows variables to be created
 		//this is necessary because to get a usable pointer from the void ptr, effectData
+		case IO:
+		{
+			IOData* ioData = (IOData*) effectIterator->effectData;
+			if(parameterIndex == 0){
+				ioData->inputGain = value;
+			}
+			else if(parameterIndex == 1){
+				ioData->outputGain = value;
+			}
+		}
 		case FEEDBACKDELAY:
 		{ 
 			FeedbackDelayData* delayData = (FeedbackDelayData*) effectIterator->effectData;

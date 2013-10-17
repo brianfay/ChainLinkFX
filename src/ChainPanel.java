@@ -28,6 +28,7 @@ public class ChainPanel extends JPanel{
 		effectComboBox.setPreferredSize(new Dimension(70,20));
 		addButton = new AddButton("Add Effect", this);
 		add(new JLabel("Chain"));
+		add(new IOPanel(this));
 		JPanel comboBoxContainerPanel = new JPanel();
 		comboBoxContainerPanel.add(effectComboBox);
 		add(comboBoxContainerPanel);
