@@ -63,11 +63,14 @@ typedef struct Chain
 //this effect does nothing
 void* initEmptyEffect();
 void emptyEffect(SAMPLE *in, SAMPLE *out, void *functionChain);
+void freeEmptyEffect(ChainLink *);
 
 //a delay effect
 void* initFeedbackDelayEffect();
 void feedbackDelayEffect(SAMPLE *in, SAMPLE *out, void *functionChain);
+void freeFeedbackDelayEffect(ChainLink *);
 
 void* initSingleTapDelayEffect();
 void singleTapDelayEffect(SAMPLE *in, SAMPLE *out, void *functionChain);
+void freeSingleTapDelayEffect(ChainLink *);
 #endif /* EFFECTS_H */

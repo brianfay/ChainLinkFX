@@ -280,7 +280,22 @@ int removeChainLink(int chainIndex, int chainLinkIndex)
 			return -1;
 	}
 	
-	//here's a potential pitfall... what if the memory is freed while the processing is ocurring?	
+	//
+	switch(linkToRemove->effectType){
+		case EMPTY:
+			freeEmptyEffect(linkToRemove);
+			break;
+		case FEEDBACKDELAY:
+			freeFeedbackDelayEffect(linkToRemove);
+			break;
+		case SINGLETAPDELAY:
+			freeSingleTapDelayEffect(linkToRemove);
+			break;
+		default:
+			fprintf( stderr, "Could not determine the type of effect to remove.\n" );
+	}
+	//here's a potential pitfall... what if the memory is freed while the processing is ocurring?
+	//This has not occurred yet in testing, but I'm still somewhat concerned.	
 	free(linkToRemove);
 	return 0;
 }

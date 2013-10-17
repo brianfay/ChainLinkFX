@@ -52,6 +52,14 @@ void feedbackDelayEffect(SAMPLE *in, SAMPLE *out, void *functionChain)
 	delayData->delayBuffer[delayData->writeIndex] = *out;
 }
 
+void freeFeedbackDelayEffect(ChainLink * chainLink)
+{
+	FeedbackDelayData * data;
+	data = chainLink->effectData;
+	free(data->delayBuffer);
+	free(data);
+}
+
 void* initSingleTapDelayEffect()
 {
 	void* effectPtr;
@@ -85,4 +93,12 @@ void singleTapDelayEffect(SAMPLE *in, SAMPLE *out, void *functionChain)
 	delayData->delayBuffer[delayData->writeIndex] = *out;
 	//now set output to current value + delayed value
 	*out += (delayData->delayBuffer[delayData->readIndex] * (delayData->gain*0.01));
+}
+
+void freeSingleTapDelayEffect(ChainLink * chainLink)
+{
+	SingleTapDelayData * data;
+	data = chainLink->effectData;
+	free(data->delayBuffer);
+	free(data);
 }
