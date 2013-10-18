@@ -54,8 +54,13 @@ public class ChainPanel extends JPanel{
 	
 	public int setParameter(int parameterIndex, int value, EffectPanel effectPanel){
 		int linkIndex = getLinkIndex(effectPanel);
-		frame.setParameter(this, linkIndex, parameterIndex, value);
-		return 0;
+		int err = frame.setParameter(this, linkIndex, parameterIndex, value);
+		return err;
+	}
+	
+	public int setIO(int parameterIndex, int value){
+		int err = frame.setIO(this, parameterIndex, value);
+		return err;
 	}
 	
 	public int getLinkIndex(EffectPanel effectPanel){

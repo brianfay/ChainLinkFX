@@ -59,7 +59,7 @@ public class MainFrame extends JFrame{
 		this.setVisible(true);
 	}
 	
-	public void setParameter(ChainPanel chainPanel, int linkIndex, int parameterIndex, int value){
+	public int setParameter(ChainPanel chainPanel, int linkIndex, int parameterIndex, int value){
 		int chainIndex = -1;
 		for(int i = 0; i < chainList.size(); i++){
 			if(chainPanel.equals(chainList.get(i))){
@@ -67,12 +67,33 @@ public class MainFrame extends JFrame{
 				System.out.println("setting param on... chainIndex = " + chainIndex);
 			}
 		}
+		int err = 0;
 		if(chainIndex >=0){
-			int err = JNIBridge.setParameter(chainIndex, linkIndex, parameterIndex, value);
+			err = JNIBridge.setParameter(chainIndex, linkIndex, parameterIndex, value);
 			if(err != 0){
 				System.out.println("There was a problem setting the parameter.");
 			}
 		}
+		return err;
+	}
+	
+	public int setIO(ChainPanel chainPanel, int parameterIndex, int value){
+		int chainIndex = -1;
+		for(int i = 0; i < chainList.size(); i++){
+			if(chainPanel.equals(chainList.get(i))){
+				chainIndex = i;
+				System.out.println("setting param " + parameterIndex + " on chain " + chainIndex);
+			}
+		}
+		int err = 0;
+		if(chainIndex >=0){
+			//sending -1 instead of 0, because setParameter adds 1 to link index
+			err = JNIBridge.setParameter(chainIndex, -1, parameterIndex, value);
+			if(err != 0){
+				System.out.println("There was a problem setting the parameter.");
+			}
+		}
+		return err;
 	}
 	
 	public void addChainLink(ChainPanel chainPanel, int linkIndex, int selectedEffect){
